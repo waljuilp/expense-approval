@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Approval</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Expense Approval</h1>
+    <div class="summary">
+      <span id="pending-count" class="badge">0 submitted</span>
+      <span id="total-amount" class="badge badge-muted">Approved: €0.00</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <h2>Submit an expense</h2>
+      <form id="expense-form">
+        <div class="form-row">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" required />
+        </div>
+        <div class="form-row">
+          <label for="amount">Amount (€)</label>
+          <input type="number" id="amount" name="amount" required min="0.01" step="0.01" />
+        </div>
+        <div class="form-row">
+          <label for="category">Category</label>
+          <select id="category" name="category">
+            <option>Travel</option>
+            <option>Office</option>
+            <option>Training</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit expense</button>
+      </form>
+      <p id="storage-error" role="alert" hidden></p>
+    </section>
+
+    <section class="panel panel-wide">
+      <div class="panel-header">
+        <h2>Expenses</h2>
+        <div class="filters" id="filters">
+          <button type="button" class="btn btn-filter active" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="btn btn-filter" data-filter="SUBMITTED" aria-pressed="false">Submitted</button>
+          <button type="button" class="btn btn-filter" data-filter="APPROVED" aria-pressed="false">Approved</button>
+          <button type="button" class="btn btn-filter" data-filter="REJECTED" aria-pressed="false">Rejected</button>
+        </div>
+      </div>
+      <ul id="expense-list" class="expense-list"></ul>
+      <p id="empty-message" class="empty-message">No expenses to display.</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
