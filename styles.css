@@ -227,7 +227,8 @@ textarea:focus {
   letter-spacing: 0.03em;
 }
 
-.status-submitted {
+.status-submitted,
+.status-pending_manager_approval {
   background: #fef3c7;
   color: var(--color-pending);
 }

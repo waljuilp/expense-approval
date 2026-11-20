@@ -23,10 +23,18 @@
     expenses = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(expenses)) throw new Error("Invalid expense data");
     const oldStatuses = { pending: "SUBMITTED", approved: "APPROVED", rejected: "REJECTED" };
-    expenses = expenses.map((expense) => ({
-      ...expense,
-      status: oldStatuses[expense.status] || expense.status,
-    }));
+    expenses = expenses.map((expense) => {
+      if (!expense || !Number.isFinite(expense.amount) || expense.amount <= 0) {
+        throw new Error("Invalid saved expense amount");
+      }
+      const status = oldStatuses[expense.status] || expense.status;
+      return {
+        ...expense,
+        status: status === "SUBMITTED" && expense.amount > 1000
+          ? "PENDING_MANAGER_APPROVAL"
+          : status,
+      };
+    });
   } catch (error) {
     storageError.textContent = "Could not load saved expenses. Changes are disabled to protect your data.";
     storageError.hidden = false;
@@ -47,6 +55,10 @@
       console.error("Could not save expenses:", error);
       return false;
     }
+  }
+
+  function isSubmitted(expense) {
+    return expense.status === "SUBMITTED" || expense.status === "PENDING_MANAGER_APPROVAL";
   }
 
   descriptionInput.addEventListener("input", () => {
@@ -74,7 +86,7 @@
       amount,
       category: data.get("category"),
       notes: data.get("notes").trim(),
-      status: "SUBMITTED",
+      status: amount > 1000 ? "PENDING_MANAGER_APPROVAL" : "APPROVED",
       createdAt: new Date().toISOString(),
     };
     if (saveExpenses([expense, ...expenses])) {
@@ -104,7 +116,7 @@
     let updated;
     if (action === "delete") {
       updated = expenses.filter((item) => item.id !== id);
-    } else if (expense.status === "SUBMITTED" && (action === "approve" || action === "reject")) {
+    } else if (isSubmitted(expense) && (action === "approve" || action === "reject")) {
       const status = action === "approve" ? "APPROVED" : "REJECTED";
       updated = expenses.map((item) => item.id === id ? { ...item, status } : item);
     } else {
@@ -116,10 +128,12 @@
   function render() {
     const visible = activeFilter === "all"
       ? expenses
-      : expenses.filter((expense) => expense.status === activeFilter);
+      : expenses.filter((expense) =>
+        activeFilter === "SUBMITTED" ? isSubmitted(expense) : expense.status === activeFilter
+      );
     list.replaceChildren(...visible.map(renderItem));
     emptyMessage.classList.toggle("hidden", visible.length > 0);
-    pendingCount.textContent = `${expenses.filter((expense) => expense.status === "SUBMITTED").length} submitted`;
+    pendingCount.textContent = `${expenses.filter(isSubmitted).length} submitted`;
     const approvedTotal = expenses
       .filter((expense) => expense.status === "APPROVED")
       .reduce((sum, expense) => sum + expense.amount, 0);
@@ -152,11 +166,18 @@
     actions.className = "expense-actions";
     const status = document.createElement("span");
     status.className = `status status-${expense.status.toLowerCase()}`;
-    status.textContent = expense.status;
+    status.textContent = expense.status === "PENDING_MANAGER_APPROVAL"
+      ? "Pending manager approval"
+      : expense.status;
     actions.append(status);
-    if (expense.status === "SUBMITTED") {
+    if (isSubmitted(expense)) {
       actions.append(
-        actionButton("approve", expense.id, "Approve", "btn-approve"),
+        actionButton(
+          "approve",
+          expense.id,
+          expense.status === "PENDING_MANAGER_APPROVAL" ? "Manager approve" : "Approve",
+          "btn-approve"
+        ),
         actionButton("reject", expense.id, "Reject", "btn-reject")
       );
     }
